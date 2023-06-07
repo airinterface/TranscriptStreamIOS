@@ -13,43 +13,41 @@ import AVFAudio
 typealias ErrorCallback = ( String)-> Void;
 typealias onTextCallback = ( String)-> Void;
 
-class AudioStreamer:NSObject, AWSTranscribeStreamingClientDelegate {
+
+
+
+class TranscribeStreamer:NSObject, AWSTranscribeStreamingClientDelegate {
     
-    private let transcriptKey = "TranscriptKey"
-    private var apiKey:String;
-    private var apiSecret:String;
+    private let transcriptKey = "transcribeStreaming"
+    private var apiKey:String!;
+    private var apiSecret:String!;
     private var onError:ErrorCallback?;
     private var onText:onTextCallback?;
-    private var transcribeStreamingClient: AWSTranscribeStreaming;
-    private var audioStream: AudioStream
-    private var request: AWSTranscribeStreamingStartStreamTranscriptionRequest;
-    private var audioEngine: AVAudioEngine;
-
-    init( audioEngine: AVAudioEngine, onError:ErrorCallback?, onText: onTextCallback?){
+    private var transcribeStreamingClient: AWSTranscribeStreaming!;
+    private var request: AWSTranscribeStreamingStartStreamTranscriptionRequest!;
+    private var started = false;
+    private var sessionEstablished = false;
+    init( onError:ErrorCallback?, onText: onTextCallback?){
         super.init()
-        self.audioEngine = audioEngine;
         self.onText = onText;
         self.onError = onError;
-        guard let key = ProcessInfo.processInfo.environment["AWS_KEY"] else {
+        guard let key = AWS_KEY else {
             onError?("AWS_KEY is not set")
             return;
         }
         apiKey = key;
-        guard let secret = ProcessInfo.processInfo.environment["AWS_SECRET"] else {
+        guard let secret = AWS_SECRET else {
             onError?("AWS_SECRET is not set")
             return;
         }
         apiSecret = secret;
-        
         print("AWS_API = " + apiKey)
         print("AWS_SECRET = " + apiSecret)
-        audioStream = AudioStream();
         configure();
     
     }
     func configure(){
-        audioStream.setup();
-
+                
         guard let configuration = AWSServiceConfiguration(
             region: .USEast1,
             credentialsProvider:  AWSStaticCredentialsProvider(
@@ -59,16 +57,21 @@ class AudioStreamer:NSObject, AWSTranscribeStreamingClientDelegate {
             onError?("Can't get default service configuration")
             return
         }
+        
         AWSServiceManager.default().defaultServiceConfiguration = configuration
         AWSTranscribeStreaming.register(with: configuration, forKey: transcriptKey)
         transcribeStreamingClient = AWSTranscribeStreaming(forKey: transcriptKey)
 
+
         request = AWSTranscribeStreamingStartStreamTranscriptionRequest()
         request.languageCode = .enUS // Set the language code
         request.mediaEncoding = .pcm // Set the audio encoding type
+        request.mediaSampleRateHertz = 16000
+        
+
         
         let callbackQueue = DispatchQueue(label: "testStreaming")
-        transcribeStreamingClient.setDelegate(self, callbackQueue: callbackQueue)
+        transcribeStreamingClient.setDelegate(self, callbackQueue: DispatchQueue.global())
     }
     
     func connectionStatusDidChange(_ connectionStatus: AWSTranscribeStreamingClientConnectionStatus, withError error: Error?) {
@@ -77,6 +80,7 @@ class AudioStreamer:NSObject, AWSTranscribeStreamingClientDelegate {
         }
         
         if connectionStatus == .connected {
+            sessionEstablished = true
             DispatchQueue.main.async {
                 print("AWS Connected")
                 
@@ -84,6 +88,7 @@ class AudioStreamer:NSObject, AWSTranscribeStreamingClientDelegate {
         }
         
         if connectionStatus == .closed && error == nil {
+            sessionEstablished = false
             DispatchQueue.main.async {
                 print("AWS Closed")
             }
@@ -136,23 +141,45 @@ class AudioStreamer:NSObject, AWSTranscribeStreamingClientDelegate {
     
     func start(){
         /* printing */
-        transcribeStreamingClient.startTranscriptionWSS(request)
+        print("Starting Transcription")
         // Start the audio engine
-        audioEngine.audioInputNode.installTap(onBus: 0, bufferSize: 1024, format: audioFormat) { (buffer, time) in
+    }
+    
+    func pause(){
+        if( started ) {
+            print("pausing frame")
+            self.transcribeStreamingClient.sendEndFrame()
+            started = false
         }
-
-
-        try! audioEngine.start()
 
     }
     
+    func initialzeConnection(){
+        print("Socket Requested Starting Transcription")
+        transcribeStreamingClient.startTranscriptionWSS(request)
+    }
+
     func stop(){
+        started = false;
         transcribeStreamingClient.endTranscription()
     }
     
-    func feed( audioData: NSData ){
-        // Now that the web socket is connected, it is safe to proceed with streaming
+    func feed( _ audioData: NSData ){
+        if( audioData.isEmpty ) {
+            print("audio is empty")
+            return;
+        }
         
+        // Now that the web socket is connected, it is safe to proceed with streaming
+        if( !started ) {
+            initialzeConnection()
+            started = true;
+        }
+        if( !sessionEstablished ) {
+            print("session isn't established")
+            return;
+        }
+        print("Sending");
 
         let headers = [
             ":content-type": "audio/wav",
@@ -160,31 +187,16 @@ class AudioStreamer:NSObject, AWSTranscribeStreamingClientDelegate {
             ":event-type": "AudioEvent"
         ]
         
-        let chunkSize = 4096
-        let audioDataSize = audioData.count
-        
-        var currentStart = 0
-        var currentEnd = min(chunkSize, audioDataSize - currentStart)
+        transcribeStreamingClient.send( Data( audioData ), headers: headers)
 
-        while currentStart < audioDataSize {
-            let dataChunk = audioData[currentStart ..< currentEnd]
-            let data = NSData.init(bytesNoCopy: dataChunk.first, length: dataChunk.count )
-            transcribeStreamingClient.send( data, headers: headers)
-            currentStart = currentEnd
-            currentEnd = min(currentStart + chunkSize, audioDataSize)
-        }
-        
-        print("Sending end frame")
-        self.transcribeStreamingClient.sendEndFrame()
-
-        print("Waiting for final transcription event")
-        wait(for: [receivedFinalTranscription], timeout: AWSTranscribeStreamingSwiftTests.networkOperationTimeout)
-        
-        print("Ending transcription")
-        transcribeStreamingClient.endTranscription()
-        
-        print("Waiting for websocket to close")
-        wait(for: [webSocketIsClosed], timeout: AWSTranscribeStreamingSwiftTests.networkOperationTimeout)
+//        print("Waiting for final transcription event")
+//        wait(for: [receivedFinalTranscription], timeout: AWSTranscribeStreamingSwiftTests.networkOperationTimeout)
+//
+//        print("Ending transcription")
+//        transcribeStreamingClient.endTranscription()
+//
+//        print("Waiting for websocket to close")
+//        wait(for: [webSocketIsClosed], timeout: AWSTranscribeStreamingSwiftTests.networkOperationTimeout)
 
 
         

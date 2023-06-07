@@ -6,13 +6,19 @@
 //
 
 import UIKit
+import AVFoundation
+import AudioToolbox
+
 
 class ViewController: UIViewController, UIGestureRecognizerDelegate{
-
+    
     @IBOutlet weak var imageView: UIImageView!
     @IBOutlet weak var textView: UITextView!
     var touchStartCallback: (() -> Void)?
     var touchEndCallback: (() -> Void)?
+    var audioStream: AudioStream!
+    var transcribeStreamer: TranscribeStreamer!
+
     var triggerView: UIView?
     var _recording = false;
     var recording: Bool {
@@ -21,14 +27,28 @@ class ViewController: UIViewController, UIGestureRecognizerDelegate{
         }
         set ( newVal ) {
             _recording = newVal
+            print( _recording ? "recording" : "paused" )
         }
     }
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
 
+        if AVCaptureDevice.authorizationStatus(for: AVMediaType.audio) != .authorized {
+            AVCaptureDevice.requestAccess(for: AVMediaType.audio,
+                                          completionHandler: { (granted: Bool) in
+            })
+        }
+    }
     override func viewDidLoad() {
         // Do any additional setup after loading the view.
         super.viewDidLoad()
-
+        initStreamer( onError: { errorMessage in
+            print( "Error" + errorMessage )
+        }, onText: { message in
+            print( "text: " + message )
+        });
     }
+    
     
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
@@ -38,11 +58,13 @@ class ViewController: UIViewController, UIGestureRecognizerDelegate{
                        
     func touchStart(){
         recording = true
+        startListning();
 
     }
                        
     func touchEnd(){
         recording = false
+        stopListning();
     }
 
 
