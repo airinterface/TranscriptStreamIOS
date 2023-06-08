@@ -18,9 +18,13 @@ class ViewController: UIViewController, UIGestureRecognizerDelegate{
     var touchEndCallback: (() -> Void)?
     var audioStream: AudioStream!
     var transcribeStreamer: TranscribeStreamer!
-
+    var currentString = "";
+    var partialText = "";
+    var completeText = "";
     var triggerView: UIView?
     var _recording = false;
+    var onImage = UIImage(named: "prototype_on");
+    var offImage = UIImage(named: "prototype");
     var recording: Bool {
         get {
             return _recording
@@ -45,7 +49,7 @@ class ViewController: UIViewController, UIGestureRecognizerDelegate{
         initStreamer( onError: { errorMessage in
             print( "Error" + errorMessage )
         }, onText: { message in
-            print( "text: " + message )
+            self.onTranscript(message);
         });
     }
     
@@ -59,12 +63,19 @@ class ViewController: UIViewController, UIGestureRecognizerDelegate{
     func touchStart(){
         recording = true
         startListning();
-
+        imageView.image = onImage;
     }
                        
     func touchEnd(){
         recording = false
         stopListning();
+        imageView.backgroundColor = .clear
+        imageView.image = offImage;
+    }
+    
+    func onTranscript( _ msg : String ) {
+        currentString += msg + "\r\n";
+        textView.text =  currentString
     }
 
 

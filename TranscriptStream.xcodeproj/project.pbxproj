@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		3CA766670A072566AA1C08CA /* Pods_TranscriptStreamTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5BE413CBFF630A0C717185FB /* Pods_TranscriptStreamTests.framework */; };
+		832160032A3113B9003CC4E0 /* AVAudioPCMBuffer+Converter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 832160022A3113B9003CC4E0 /* AVAudioPCMBuffer+Converter.swift */; };
 		832B16252A28F3F400F2F4EA /* TranscribeStreamer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 832B16242A28F3F400F2F4EA /* TranscribeStreamer.swift */; };
 		832B16282A28FC9B00F2F4EA /* AudioSteram.swift in Sources */ = {isa = PBXBuildFile; fileRef = 832B16272A28FC9B00F2F4EA /* AudioSteram.swift */; };
 		832B162A2A2A2C7900F2F4EA /* VieController+AudioControl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 832B16292A2A2C7900F2F4EA /* VieController+AudioControl.swift */; };
@@ -51,6 +52,7 @@
 		5BE413CBFF630A0C717185FB /* Pods_TranscriptStreamTests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_TranscriptStreamTests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		5F8EE03F4D22A9866B5A16A3 /* Pods-TranscriptStreamTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-TranscriptStreamTests.release.xcconfig"; path = "Target Support Files/Pods-TranscriptStreamTests/Pods-TranscriptStreamTests.release.xcconfig"; sourceTree = "<group>"; };
 		6097FD62EC1B1929D24B9DBB /* Pods-TranscriptStream.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-TranscriptStream.debug.xcconfig"; path = "Target Support Files/Pods-TranscriptStream/Pods-TranscriptStream.debug.xcconfig"; sourceTree = "<group>"; };
+		832160022A3113B9003CC4E0 /* AVAudioPCMBuffer+Converter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AVAudioPCMBuffer+Converter.swift"; sourceTree = "<group>"; };
 		832B16242A28F3F400F2F4EA /* TranscribeStreamer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscribeStreamer.swift; sourceTree = "<group>"; };
 		832B16272A28FC9B00F2F4EA /* AudioSteram.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioSteram.swift; sourceTree = "<group>"; };
 		832B16292A2A2C7900F2F4EA /* VieController+AudioControl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "VieController+AudioControl.swift"; sourceTree = "<group>"; };
@@ -154,6 +156,7 @@
 				832B16242A28F3F400F2F4EA /* TranscribeStreamer.swift */,
 				832B16272A28FC9B00F2F4EA /* AudioSteram.swift */,
 				832B162B2A2A4B8800F2F4EA /* ConfigValues.swift */,
+				832160022A3113B9003CC4E0 /* AVAudioPCMBuffer+Converter.swift */,
 			);
 			path = TranscriptStream;
 			sourceTree = "<group>";
@@ -433,6 +436,7 @@
 				837DD5402A263CB00086334F /* SceneDelegate.swift in Sources */,
 				832B16282A28FC9B00F2F4EA /* AudioSteram.swift in Sources */,
 				837DD5702A2783530086334F /* ViewController+ListenerControl.swift in Sources */,
+				832160032A3113B9003CC4E0 /* AVAudioPCMBuffer+Converter.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

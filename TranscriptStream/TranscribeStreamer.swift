@@ -21,6 +21,10 @@ class TranscribeStreamer:NSObject, AWSTranscribeStreamingClientDelegate {
     private let transcriptKey = "transcribeStreaming"
     private var apiKey:String!;
     private var apiSecret:String!;
+    let timeoutIntervalSeconds = Double(10)
+    private var closeRequeseted = false;
+    private let timeoutQueue = DispatchQueue(label: "io.airinterface.timeout")
+
     private var onError:ErrorCallback?;
     private var onText:onTextCallback?;
     private var transcribeStreamingClient: AWSTranscribeStreaming!;
@@ -133,11 +137,30 @@ class TranscribeStreamer:NSObject, AWSTranscribeStreamingClientDelegate {
 
         print("Received final transcription event (results: \(results))")
         DispatchQueue.main.async {
-            self.onText?("\(results)")
+            let text = results.last?.alternatives?.last?.transcript ?? ""
+            self.onText?(text)
+            self.closeConnectionIfRequested();
         }
 
     }
 
+    
+    let timeoutWorkItem = DispatchWorkItem {
+        // Handle the timeout scenario here
+        print("Request timed out")
+    }
+
+    func closeConnectionIfRequested(){
+        if( closeRequeseted ){
+            closeRequeseted = false;
+            stop()
+        }
+    }
+    
+    func waitAndCloseConnection(){
+        closeRequeseted = true;
+        timeoutQueue.asyncAfter(deadline: .now() + timeoutIntervalSeconds, execute: closeConnectionIfRequested )
+    }
     
     func start(){
         /* printing */
@@ -149,7 +172,7 @@ class TranscribeStreamer:NSObject, AWSTranscribeStreamingClientDelegate {
         if( started ) {
             print("pausing frame")
             self.transcribeStreamingClient.sendEndFrame()
-            started = false
+            waitAndCloseConnection()
         }
 
     }
@@ -161,6 +184,7 @@ class TranscribeStreamer:NSObject, AWSTranscribeStreamingClientDelegate {
 
     func stop(){
         started = false;
+        sessionEstablished = false;
         transcribeStreamingClient.endTranscription()
     }
     
@@ -188,16 +212,6 @@ class TranscribeStreamer:NSObject, AWSTranscribeStreamingClientDelegate {
         ]
         
         transcribeStreamingClient.send( Data( audioData ), headers: headers)
-
-//        print("Waiting for final transcription event")
-//        wait(for: [receivedFinalTranscription], timeout: AWSTranscribeStreamingSwiftTests.networkOperationTimeout)
-//
-//        print("Ending transcription")
-//        transcribeStreamingClient.endTranscription()
-//
-//        print("Waiting for websocket to close")
-//        wait(for: [webSocketIsClosed], timeout: AWSTranscribeStreamingSwiftTests.networkOperationTimeout)
-
 
         
     }
