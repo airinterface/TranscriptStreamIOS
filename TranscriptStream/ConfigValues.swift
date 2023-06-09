@@ -8,6 +8,6 @@
 import Foundation
 
 
-let AWS_KEY:String? = "<Enter Your AWS KEY>"
-let AWS_SECRET:String? = "<Enter Your AWS Secret>"
+let AWS_KEY:String? = "AKIAS7EGYMEQEMQFCAIR"
+let AWS_SECRET:String? = "xdek2yiVwslAq/xR331E3K5Mm+zwLGBVwE/o/583"
 

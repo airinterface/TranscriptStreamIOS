@@ -65,7 +65,7 @@ class TranscribeStreamer:NSObject, AWSTranscribeStreamingClientDelegate {
         AWSServiceManager.default().defaultServiceConfiguration = configuration
         AWSTranscribeStreaming.register(with: configuration, forKey: transcriptKey)
         transcribeStreamingClient = AWSTranscribeStreaming(forKey: transcriptKey)
-
+        
 
         request = AWSTranscribeStreamingStartStreamTranscriptionRequest()
         request.languageCode = .enUS // Set the language code
@@ -131,16 +131,17 @@ class TranscribeStreamer:NSObject, AWSTranscribeStreamingClientDelegate {
         }
 
         guard !isPartial else {
-            onError?("Partial result received, waiting for next event (results: \(results))")
+            DispatchQueue.main.async {
+                print("Received partial transcription event (results: \(results))")
+
+                let text = results.last?.alternatives?.last?.items?.last?.content ?? ""
+                self.onText?(text)
+            }
             return
         }
 
         print("Received final transcription event (results: \(results))")
-        DispatchQueue.main.async {
-            let text = results.last?.alternatives?.last?.transcript ?? ""
-            self.onText?(text)
             self.closeConnectionIfRequested();
-        }
 
     }
 

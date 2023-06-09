@@ -74,7 +74,7 @@ class ViewController: UIViewController, UIGestureRecognizerDelegate{
     }
     
     func onTranscript( _ msg : String ) {
-        currentString += msg + "\r\n";
+        currentString += msg;
         textView.text =  currentString
     }
 
