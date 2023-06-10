@@ -20,7 +20,6 @@ class ViewController: UIViewController, UIGestureRecognizerDelegate{
     var transcribeStreamer: TranscribeStreamer!
     var currentString = "";
     var partialText = "";
-    var completeText = "";
     var triggerView: UIView?
     var _recording = false;
     var onImage = UIImage(named: "prototype_on");
@@ -50,6 +49,8 @@ class ViewController: UIViewController, UIGestureRecognizerDelegate{
             print( "Error" + errorMessage )
         }, onText: { message in
             self.onTranscript(message);
+        }, onPartialText: { message in
+            self.onPartialTranscript(message)
         });
     }
     
@@ -73,9 +74,15 @@ class ViewController: UIViewController, UIGestureRecognizerDelegate{
         imageView.image = offImage;
     }
     
+    func onPartialTranscript( _ msg : String ) {
+        partialText = msg;
+        textView.text =  currentString + partialText;
+    }
+
+    
     func onTranscript( _ msg : String ) {
         currentString += msg;
-        textView.text =  currentString
+        textView.text =  currentString + "\r\n"
     }
 
 

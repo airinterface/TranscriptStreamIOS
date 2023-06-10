@@ -10,11 +10,16 @@ import Foundation
 
 extension ViewController {
     
-    func initStreamer( onError: @escaping (String)-> Void, onText:@escaping (String)-> Void){
+    func initStreamer( onError: @escaping (String)-> Void,
+                       onText:@escaping (String)-> Void,
+                       onPartialText:@escaping (String)-> Void
+    ){
         audioStream = AudioStream();
         audioStream.setup()
         transcribeStreamer = TranscribeStreamer( onError: onError,
-                                                 onText: onText )
+                                                 onText: onText,
+                                                 onPartial: onPartialText
+                                                )
         transcribeStreamer.start()
     }
 

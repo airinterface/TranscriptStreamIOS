@@ -12,6 +12,8 @@ import AVFAudio
 
 typealias ErrorCallback = ( String)-> Void;
 typealias onTextCallback = ( String)-> Void;
+typealias onPartialTextCallback = ( String)-> Void;
+
 
 
 
@@ -27,13 +29,16 @@ class TranscribeStreamer:NSObject, AWSTranscribeStreamingClientDelegate {
 
     private var onError:ErrorCallback?;
     private var onText:onTextCallback?;
+    private var onPartialText: onPartialTextCallback?;
+
     private var transcribeStreamingClient: AWSTranscribeStreaming!;
     private var request: AWSTranscribeStreamingStartStreamTranscriptionRequest!;
     private var started = false;
     private var sessionEstablished = false;
-    init( onError:ErrorCallback?, onText: onTextCallback?){
+    init( onError:ErrorCallback?, onText: onTextCallback?, onPartial: onPartialTextCallback? ){
         super.init()
         self.onText = onText;
+        self.onPartialText = onPartial;
         self.onError = onError;
         guard let key = AWS_KEY else {
             onError?("AWS_KEY is not set")
@@ -101,6 +106,7 @@ class TranscribeStreamer:NSObject, AWSTranscribeStreamingClientDelegate {
     }
     
     func didReceiveEvent(_ event: AWSTranscribeStreamingTranscriptResultStream?, decodingError: Error?) {
+        
         if( decodingError != nil ) {
             onError?( decodingError?.localizedDescription.description ??  "error received" )
         }
@@ -133,15 +139,23 @@ class TranscribeStreamer:NSObject, AWSTranscribeStreamingClientDelegate {
         guard !isPartial else {
             DispatchQueue.main.async {
                 print("Received partial transcription event (results: \(results))")
-
-                let text = results.last?.alternatives?.last?.items?.last?.content ?? ""
-                self.onText?(text)
+                if( results.last?.alternatives?.count ?? 0 > 0 ){
+                    print("Received partial transcription event (results: \(results))")
+                }
+                let partialTranscripts = results.last?.alternatives?.last?.transcript ?? ""
+                print("(P:\(partialTranscripts))")
+                self.onPartialText?( partialTranscripts )
             }
             return
         }
+        
+        DispatchQueue.main.async {
+            let text = results.last?.alternatives?.last?.transcript ?? ""
+            self.onText?( text )
+        }
 
         print("Received final transcription event (results: \(results))")
-            self.closeConnectionIfRequested();
+        self.closeConnectionIfRequested();
 
     }
 
